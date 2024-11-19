@@ -29,12 +29,30 @@ app.use((req, res, next) => {
 
 // MySQL Connection
 const db = mysql.createConnection({
-    host: 'fanny-mendelssohn-server.up.railway.app',
+    host: process.env.DB_HOST || 'localhost', // Make sure this is correct
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    connectTimeout: 10000 // Increase the connection timeout to 10 seconds
+    port: process.env.DB_PORT || 3306,
+    connectTimeout: 10000,
+    ssl: {
+        rejectUnauthorized: false // Add this for Railway.app MySQL connections
+    }
+});
+
+// Add a connection error handler
+db.on('error', (err) => {
+    console.error('Database error:', err);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.log('Attempting to reconnect to database...');
+        db.connect((err) => {
+            if (err) {
+                console.error("Reconnection failed:", err.message);
+            } else {
+                console.log("Reconnected to database");
+            }
+        });
+    }
 });
 
 db.connect((err) => {
@@ -65,6 +83,9 @@ app.post("/api/init-db", async (req, res) => {
         // Add response headers
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // Test the connection first
+        await queryAsync('SELECT 1');
 
         await queryAsync(`
             CREATE TABLE IF NOT EXISTS nodes (
