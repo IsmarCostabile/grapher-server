@@ -146,6 +146,30 @@ app.post("/api/init-db", async (req, res) => {
     }
 });
 
+// Drop All Tables
+app.post("/api/drop-tables", async (req, res) => {
+    try {
+        // Add explicit error handling for database connection
+        if (!db || !db.query) {
+            throw new Error("Database connection not established");
+        }
+
+        // Add response headers
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // Drop the tables
+        await queryAsync('DROP TABLE IF EXISTS connections');
+        await queryAsync('DROP TABLE IF EXISTS node_graphs');
+        await queryAsync('DROP TABLE IF EXISTS nodes');
+
+        res.status(200).json({ message: "All tables dropped successfully" });
+    } catch (err) {
+        console.error("Failed to drop tables:", err.message);
+        res.status(500).json({ error: `Failed to drop tables: ${err.message}` });
+    }
+});
+
 // Save Node
 app.post("/api/save-node", async (req, res) => {
     try {
