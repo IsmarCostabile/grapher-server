@@ -195,6 +195,11 @@ app.post("/api/save-node", async (req, res) => {
             return res.status(400).json({ error: "Missing required field (title)" });
         }
 
+        // Ensure position is correctly formatted as a JSON string
+        if (typeof position === 'object') {
+            position = JSON.stringify(position);
+        }
+
         // First ensure the node exists or create it
         const query = `
             INSERT INTO nodes (title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
@@ -222,7 +227,7 @@ app.post("/api/save-node", async (req, res) => {
             coordinates ? JSON.stringify(coordinates) : null, 
             type || 'normal', 
             parent_id || null, 
-            position ? JSON.stringify(position) : JSON.stringify({"dx":0,"dy":0})
+            position || JSON.stringify({"dx":0,"dy":0})
         ];
 
         const result = await queryAsync(query, values);
