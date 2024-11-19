@@ -2,6 +2,7 @@ const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const { v4: uuidv4 } = require('uuid'); // Add this line
 require("dotenv").config();
 
 const app = express();
@@ -150,7 +151,7 @@ app.post("/api/save-node", async (req, res) => {
     try {
         console.log('Received save node request:', req.body);
         
-        const { 
+        let { 
             id, 
             title, 
             description, 
@@ -166,8 +167,12 @@ app.post("/api/save-node", async (req, res) => {
             graph_id 
         } = req.body;
 
-        if (!id || !title) {
-            return res.status(400).json({ error: "Missing required fields (id, title)" });
+        if (!id) {
+            id = uuidv4(); // Generate a unique ID if not provided
+        }
+
+        if (!title) {
+            return res.status(400).json({ error: "Missing required field (title)" });
         }
 
         // First ensure the node exists or create it
