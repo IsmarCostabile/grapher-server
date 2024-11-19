@@ -245,6 +245,7 @@ app.delete("/api/delete-node/:id", async (req, res) => {
         return res.status(400).json({ error: "Node ID is required" });
     }
     try {
+        console.log(`Deleting node with ID: ${id}`); // Log the node ID being deleted
         await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
         await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
         await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
