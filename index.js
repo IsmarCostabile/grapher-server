@@ -237,18 +237,11 @@ app.post("/api/save-node", async (req, res) => {
             await queryAsync("DELETE FROM connections WHERE source_id = ?", [id]);
             
             if (connections.length > 0) {
-                // Ensure all target nodes exist before inserting connections
-                const existingNodes = await queryAsync("SELECT id FROM nodes WHERE id IN (?)", [connections]);
-                const existingNodeIds = existingNodes.map(node => node.id);
-                const validConnections = connections.filter(targetId => existingNodeIds.includes(targetId));
-                
-                if (validConnections.length > 0) {
-                    const connectionValues = validConnections.map(targetId => [id, targetId]);
-                    await queryAsync(
-                        "INSERT INTO connections (source_id, target_id) VALUES ?",
-                        [connectionValues]
-                    );
-                }
+                const connectionValues = connections.map(targetId => [id, targetId]);
+                await queryAsync(
+                    "INSERT INTO connections (source_id, target_id) VALUES ?",
+                    [connectionValues]
+                );
             }
         }
 
