@@ -246,16 +246,20 @@ app.delete("/api/delete-node/:id", async (req, res) => {
     }
     try {
         console.log(`Deleting node with ID: ${id}`); // Log the node ID being deleted
-        const deleteConnections = await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
-        const deleteNodeGraphs = await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
-        const deleteNode = await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
-        
-        console.log(`Delete node result:`, deleteNode); // Log the result of the delete query
 
-        if (deleteNode.affectedRows === 0) {
+        // Ensure the node exists before attempting to delete
+        const nodeExists = await queryAsync("SELECT id FROM nodes WHERE id = ?", [id]);
+        if (nodeExists.length === 0) {
             console.log(`Node with ID ${id} not found`); // Log if the node is not found
             return res.status(404).json({ error: "Node not found" });
         }
+
+        // Delete connections and node_graphs associated with the node
+        await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
+        await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
+        const deleteNode = await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
+
+        console.log(`Delete node result:`, deleteNode); // Log the result of the delete query
 
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json({ message: "Node deleted successfully" });
