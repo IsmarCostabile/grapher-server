@@ -130,55 +130,94 @@ app.post("/api/init-db", async (req, res) => {
 
 // Save Node
 app.post("/api/save-node", async (req, res) => {
-    const { id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position, connections, graph_id } = req.body;
-    const query = `
-        INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        title = VALUES(title),
-        description = VALUES(description),
-        images = VALUES(images),
-        audioFiles = VALUES(audioFiles),
-        documents = VALUES(documents),
-        videoLinks = VALUES(videoLinks),
-        coordinates = VALUES(coordinates),
-        type = VALUES(type),
-        parent_id = VALUES(parent_id),
-        position = VALUES(position);
-    `;
-    const values = [
-        id, 
-        title, 
-        description, 
-        JSON.stringify(images), 
-        JSON.stringify(audioFiles), 
-        JSON.stringify(documents), 
-        JSON.stringify(videoLinks), 
-        coordinates ? JSON.stringify(coordinates) : null, 
-        type, 
-        parent_id, 
-        position ? JSON.stringify(position) : null
-    ];
     try {
-        await queryAsync(query, values);
-        await queryAsync("DELETE FROM connections WHERE source_id = ?", [id]);
-        if (connections && connections.length > 0) {
-            const insertConnectionsQuery = `
-                INSERT INTO connections (source_id, target_id)
-                VALUES ?
-            `;
-            const connectionValues = connections.map(targetId => [id, targetId]);
-            await queryAsync(insertConnectionsQuery, [connectionValues]);
+        console.log('Received save node request:', req.body);
+        
+        const { 
+            id, 
+            title, 
+            description, 
+            images, 
+            audioFiles, 
+            documents, 
+            videoLinks, 
+            coordinates, 
+            type, 
+            parent_id, 
+            position, 
+            connections, 
+            graph_id 
+        } = req.body;
+
+        if (!id || !title) {
+            return res.status(400).json({ error: "Missing required fields (id, title)" });
         }
-        await queryAsync(`
-            INSERT INTO node_graphs (node_id, graph_id)
-            VALUES (?, ?)
-            ON DUPLICATE KEY UPDATE graph_id = VALUES(graph_id);
-        `, [id, graph_id]);
-        res.send("Node, connections, and node-graph relationship saved successfully");
+
+        // First ensure the node exists or create it
+        const query = `
+            INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            description = VALUES(description),
+            images = VALUES(images),
+            audioFiles = VALUES(audioFiles),
+            documents = VALUES(documents),
+            videoLinks = VALUES(videoLinks),
+            coordinates = VALUES(coordinates),
+            type = VALUES(type),
+            parent_id = VALUES(parent_id),
+            position = VALUES(position)
+        `;
+
+        const values = [
+            id, 
+            title, 
+            description || null, 
+            images ? JSON.stringify(images) : '[]', 
+            audioFiles ? JSON.stringify(audioFiles) : '[]', 
+            documents ? JSON.stringify(documents) : '[]', 
+            videoLinks ? JSON.stringify(videoLinks) : '[]', 
+            coordinates ? JSON.stringify(coordinates) : null, 
+            type || 'normal', 
+            parent_id || null, 
+            position ? JSON.stringify(position) : JSON.stringify({"dx":0,"dy":0})
+        ];
+
+        await queryAsync(query, values);
+
+        // Handle connections if they exist
+        if (connections && Array.isArray(connections)) {
+            await queryAsync("DELETE FROM connections WHERE source_id = ?", [id]);
+            
+            if (connections.length > 0) {
+                const connectionValues = connections.map(targetId => [id, targetId]);
+                await queryAsync(
+                    "INSERT INTO connections (source_id, target_id) VALUES ?",
+                    [connectionValues]
+                );
+            }
+        }
+
+        // Handle graph association
+        if (graph_id) {
+            await queryAsync(`
+                INSERT INTO node_graphs (node_id, graph_id)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE graph_id = VALUES(graph_id)
+            `, [id, graph_id]);
+        }
+
+        res.status(200).json({ 
+            message: "Node saved successfully",
+            nodeId: id
+        });
     } catch (err) {
-        console.error("Failed to save node:", err.message);
-        res.status(500).send("Failed to save node");
+        console.error("Failed to save node:", err);
+        res.status(500).json({ 
+            error: "Failed to save node", 
+            details: err.message 
+        });
     }
 });
 
