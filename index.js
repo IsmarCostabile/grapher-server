@@ -107,7 +107,7 @@ app.post("/api/init-db", async (req, res) => {
 
         await queryAsync(`
             CREATE TABLE IF NOT EXISTS nodes (
-                id VARCHAR(255) PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
                 images TEXT,
@@ -116,15 +116,15 @@ app.post("/api/init-db", async (req, res) => {
                 videoLinks TEXT,
                 coordinates VARCHAR(255),
                 type VARCHAR(50) NOT NULL,
-                parent_id VARCHAR(255),
+                parent_id INT,
                 position VARCHAR(255),
                 FOREIGN KEY (parent_id) REFERENCES nodes(id)
             );
         `);
         await queryAsync(`
             CREATE TABLE IF NOT EXISTS connections (
-                source_id VARCHAR(255),
-                target_id VARCHAR(255),
+                source_id INT,
+                target_id INT,
                 PRIMARY KEY (source_id, target_id),
                 FOREIGN KEY (source_id) REFERENCES nodes(id),
                 FOREIGN KEY (target_id) REFERENCES nodes(id)
@@ -132,7 +132,7 @@ app.post("/api/init-db", async (req, res) => {
         `);
         await queryAsync(`
             CREATE TABLE IF NOT EXISTS node_graphs (
-                node_id VARCHAR(255),
+                node_id INT,
                 graph_id VARCHAR(255),
                 PRIMARY KEY (node_id, graph_id),
                 FOREIGN KEY (node_id) REFERENCES nodes(id)
@@ -191,18 +191,14 @@ app.post("/api/save-node", async (req, res) => {
             graph_id 
         } = req.body;
 
-        if (!id) {
-            id = uuidv4(); // Generate a unique ID if not provided
-        }
-
         if (!title) {
             return res.status(400).json({ error: "Missing required field (title)" });
         }
 
         // First ensure the node exists or create it
         const query = `
-            INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO nodes (title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
             title = VALUES(title),
             description = VALUES(description),
@@ -217,7 +213,6 @@ app.post("/api/save-node", async (req, res) => {
         `;
 
         const values = [
-            id, 
             title, 
             description || null, 
             images ? JSON.stringify(images) : '[]', 
@@ -230,7 +225,10 @@ app.post("/api/save-node", async (req, res) => {
             position ? JSON.stringify(position) : JSON.stringify({"dx":0,"dy":0})
         ];
 
-        await queryAsync(query, values);
+        const result = await queryAsync(query, values);
+        if (!id) {
+            id = result.insertId; // Get the auto-incremented ID
+        }
 
         // Handle connections if they exist
         if (connections && Array.isArray(connections)) {
