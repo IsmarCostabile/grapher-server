@@ -57,6 +57,15 @@ const queryAsync = (query, values) => {
 // Initialize MySQL Database
 app.post("/api/init-db", async (req, res) => {
     try {
+        // Add explicit error handling for database connection
+        if (!db || !db.query) {
+            throw new Error("Database connection not established");
+        }
+
+        // Add response headers
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
         await queryAsync(`
             CREATE TABLE IF NOT EXISTS nodes (
                 id VARCHAR(255) PRIMARY KEY,
@@ -90,10 +99,11 @@ app.post("/api/init-db", async (req, res) => {
                 FOREIGN KEY (node_id) REFERENCES nodes(id)
             );
         `);
-        res.send("Database initialized successfully");
+        
+        res.status(200).json({ message: "Database initialized successfully" });
     } catch (err) {
         console.error("Failed to initialize database:", err.message);
-        res.status(500).send(`Failed to initialize database: ${err.message}`);
+        res.status(500).json({ error: `Failed to initialize database: ${err.message}` });
     }
 });
 
