@@ -241,6 +241,9 @@ app.post("/api/save-node", async (req, res) => {
 // Delete Node
 app.delete("/api/delete-node/:id", async (req, res) => {
     const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({ error: "Node ID is required" });
+    }
     try {
         await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
         await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
