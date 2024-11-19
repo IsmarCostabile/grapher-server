@@ -250,6 +250,8 @@ app.delete("/api/delete-node/:id", async (req, res) => {
         const deleteNodeGraphs = await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
         const deleteNode = await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
         
+        console.log(`Delete node result:`, deleteNode); // Log the result of the delete query
+
         if (deleteNode.affectedRows === 0) {
             console.log(`Node with ID ${id} not found`); // Log if the node is not found
             return res.status(404).json({ error: "Node not found" });
