@@ -320,21 +320,27 @@ app.get("/api/node/:id", async (req, res) => {
     try {
         const results = await queryAsync(query, [id]);
         if (results.length === 0) {
-            return res.status(404).send("Node not found");
+            return res.status(404).json({ error: "Node not found" });
         }
         const node = results[0];
         res.json({
-            ...node,
-            images: JSON.parse(node.images),
-            audioFiles: JSON.parse(node.audioFiles),
-            documents: JSON.parse(node.documents),
-            videoLinks: JSON.parse(node.videoLinks),
-            connections: node.connections ? node.connections.split(',') : [],
-            graphs: node.graphs ? node.graphs.split(',') : []
+            id: node.id,
+            title: node.title,
+            description: node.description,
+            images: node.images ? JSON.parse(node.images) : [],
+            audioFiles: node.audioFiles ? JSON.parse(node.audioFiles) : [],
+            documents: node.documents ? JSON.parse(node.documents) : [],
+            videoLinks: node.videoLinks ? JSON.parse(node.videoLinks) : [],
+            coordinates: node.coordinates ? JSON.parse(node.coordinates) : null,
+            type: node.type,
+            parent_id: node.parent_id,
+            position: node.position ? JSON.parse(node.position) : {"dx":0,"dy":0},
+            connections: node.connections ? node.connections.split(',').filter(Boolean) : [],
+            graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : []
         });
     } catch (err) {
         console.error("Failed to fetch node:", err.message);
-        res.status(500).send("Failed to fetch node");
+        res.status(500).json({ error: "Failed to fetch node" });
     }
 });
 
