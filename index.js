@@ -6,11 +6,12 @@ require("dotenv").config();
 
 const app = express();
 const corsOptions = {
-    origin: ['http://localhost:3000', 'https://your-production-domain.com'], // Specify allowed origins
+    origin: '*', // For development. In production, specify exact domains
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
-    maxAge: 600 // Cache preflight requests
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
@@ -235,10 +236,9 @@ app.get("/api/node/:id", async (req, res) => {
 
 // Add error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Server error:', err.message);
-    res.status(500).json({
-        error: 'Internal server error',
-        message: err.message
+    console.error('Server error:', err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal server error'
     });
 });
 
