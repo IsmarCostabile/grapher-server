@@ -245,10 +245,11 @@ app.delete("/api/delete-node/:id", async (req, res) => {
         await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
         await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
         await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
-        res.send("Node deleted successfully");
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json({ message: "Node deleted successfully" });
     } catch (err) {
         console.error("Failed to delete node:", err.message);
-        res.status(500).send("Failed to delete node");
+        res.status(500).json({ error: "Failed to delete node" });
     }
 });
 
