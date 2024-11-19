@@ -6,11 +6,11 @@ require("dotenv").config();
 
 const app = express();
 const corsOptions = {
-    origin: '*',
-    methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    origin: ['http://localhost:3000', 'https://your-production-domain.com'], // Specify allowed origins
+    methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    optionsSuccessStatus: 200
+    maxAge: 600 // Cache preflight requests
 };
 
 app.use(cors(corsOptions));
@@ -231,6 +231,15 @@ app.get("/api/node/:id", async (req, res) => {
         console.error("Failed to fetch node:", err.message);
         res.status(500).send("Failed to fetch node");
     }
+});
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server error:', err.message);
+    res.status(500).json({
+        error: 'Internal server error',
+        message: err.message
+    });
 });
 
 // Start Server
