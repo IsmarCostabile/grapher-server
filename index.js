@@ -246,9 +246,14 @@ app.delete("/api/delete-node/:id", async (req, res) => {
     }
     try {
         console.log(`Deleting node with ID: ${id}`); // Log the node ID being deleted
-        await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
-        await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
-        await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
+        const deleteConnections = await queryAsync("DELETE FROM connections WHERE source_id = ? OR target_id = ?", [id, id]);
+        const deleteNodeGraphs = await queryAsync("DELETE FROM node_graphs WHERE node_id = ?", [id]);
+        const deleteNode = await queryAsync("DELETE FROM nodes WHERE id = ?", [id]);
+        
+        if (deleteNode.affectedRows === 0) {
+            return res.status(404).json({ error: "Node not found" });
+        }
+
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json({ message: "Node deleted successfully" });
     } catch (err) {
