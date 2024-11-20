@@ -224,7 +224,7 @@ app.post("/api/save-node", async (req, res) => {
             type = VALUES(type),
             parent_id = VALUES(parent_id),
             position = VALUES(position),
-            superNodeId = VALUES(superNodeId) // Add this line
+            superNodeId = VALUES(superNodeId)
         `;
 
         const values = [
