@@ -310,7 +310,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId // Add this line
+            superNodeId: row.superNodeId 
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -382,7 +382,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId // Add this line
+            superNodeId: row.superNodeId 
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -426,7 +426,7 @@ app.get("/api/node/:id", async (req, res) => {
             position: node.position ? JSON.parse(node.position) : {"dx":0,"dy":0},
             connections: node.connections ? node.connections.split(',').filter(Boolean) : [],
             graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : [],
-            superNodeId: node.superNodeId // Add this line
+            superNodeId: node.superNodeId
         });
     } catch (err) {
         console.error("Failed to fetch node:", err.message);
