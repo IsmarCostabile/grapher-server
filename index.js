@@ -278,6 +278,42 @@ app.post("/api/save-node", async (req, res) => {
     }
 });
 
+app.get("/api/load-nodes", async (req, res) => {
+    try {
+        await ensureConnection();
+
+        const query = `
+            SELECT nodes.*, 
+                   GROUP_CONCAT(DISTINCT connections.target_id) AS connections, 
+                   GROUP_CONCAT(DISTINCT node_graphs.graph_id) AS graphs
+            FROM nodes
+            LEFT JOIN connections ON nodes.id = connections.source_id
+            LEFT JOIN node_graphs ON nodes.id = node_graphs.node_id
+            GROUP BY nodes.id
+        `;
+        const results = await queryAsync(query);
+        const formattedResults = results.map(row => ({
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            images: row.images ? JSON.parse(row.images) : [],
+            audioFiles: row.audioFiles ? JSON.parse(row.audioFiles) : [],
+            documents: row.documents ? JSON.parse(row.documents) : [],
+            videoLinks: row.videoLinks ? JSON.parse(row.videoLinks) : [],
+            coordinates: row.coordinates ? JSON.parse(row.coordinates) : null,
+            type: row.type,
+            parent_id: row.parent_id,
+            position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
+            connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
+            graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : []
+        }));
+        res.json(formattedResults);
+    } catch (err) {
+        console.error("Failed to load nodes:", err.message);
+        res.status(500).send("Failed to load nodes");
+    }
+});
+
 // Delete Node
 app.delete("/api/delete-node/:id", async (req, res) => {
     const { id } = req.params;
