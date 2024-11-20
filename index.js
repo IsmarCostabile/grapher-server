@@ -206,8 +206,8 @@ app.post("/api/save-node", async (req, res) => {
 
         // First ensure the node exists or create it
         const query = `
-            INSERT INTO nodes (title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
             title = VALUES(title),
             description = VALUES(description),
@@ -222,6 +222,7 @@ app.post("/api/save-node", async (req, res) => {
         `;
 
         const values = [
+            id || null,
             title, 
             description || null, 
             images ? JSON.stringify(images) : '[]', 
