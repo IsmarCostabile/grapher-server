@@ -204,6 +204,9 @@ app.post("/api/save-node", async (req, res) => {
             position = JSON.stringify(position);
         }
 
+        // Filter out null values from connections
+        connections = connections ? connections.filter(conn => conn !== null) : [];
+
         // First ensure the node exists or create it
         const query = `
             INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
