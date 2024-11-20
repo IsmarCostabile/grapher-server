@@ -46,40 +46,40 @@ app.use((req, res, next) => {
 });
 
 // MySQL Connection
-const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost', // Make sure this is correct
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306,
-    connectTimeout: 10000,
-    ssl: {
-        rejectUnauthorized: false // Add this for Railway.app MySQL connections
-    }
-});
+let db;
 
-// Add a connection error handler
-db.on('error', (err) => {
-    console.error('Database error:', err);
-    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('Attempting to reconnect to database...');
-        db.connect((err) => {
-            if (err) {
-                console.error("Reconnection failed:", err.message);
-            } else {
-                console.log("Reconnected to database");
-            }
-        });
-    }
-});
+const connectToDatabase = () => {
+    db = mysql.createConnection({
+        host: process.env.DB_HOST || 'localhost', // Make sure this is correct
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT || 3306,
+        connectTimeout: 10000,
+        ssl: {
+            rejectUnauthorized: false // Add this for Railway.app MySQL connections
+        }
+    });
 
-db.connect((err) => {
-    if (err) {
-        console.error("❌ Database connection failed:", err.message);
-        process.exit(1);
-    }
-    console.log("✅ Connected to MySQL database.");
-});
+    db.connect((err) => {
+        if (err) {
+            console.error("❌ Database connection failed:", err.message);
+            setTimeout(connectToDatabase, 2000); // Retry connection after 2 seconds
+        } else {
+            console.log("✅ Connected to MySQL database.");
+        }
+    });
+
+    db.on('error', (err) => {
+        console.error('Database error:', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            console.log('Attempting to reconnect to database...');
+            connectToDatabase();
+        }
+    });
+};
+
+connectToDatabase();
 
 const queryAsync = (query, values) => {
     return new Promise((resolve, reject) => {
@@ -90,13 +90,18 @@ const queryAsync = (query, values) => {
     });
 };
 
+// Ensure the database connection is open before executing queries
+const ensureConnection = async () => {
+    if (!db || db.state === 'disconnected') {
+        connectToDatabase();
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds to reconnect
+    }
+};
+
 // Initialize MySQL Database
 app.post("/api/init-db", async (req, res) => {
     try {
-        // Add explicit error handling for database connection
-        if (!db || !db.query) {
-            throw new Error("Database connection not established");
-        }
+        await ensureConnection();
 
         // Add response headers
         res.setHeader('Content-Type', 'application/json');
@@ -149,10 +154,7 @@ app.post("/api/init-db", async (req, res) => {
 // Drop All Tables
 app.post("/api/drop-tables", async (req, res) => {
     try {
-        // Add explicit error handling for database connection
-        if (!db || !db.query) {
-            throw new Error("Database connection not established");
-        }
+        await ensureConnection();
 
         // Add response headers
         res.setHeader('Content-Type', 'application/json');
@@ -173,6 +175,8 @@ app.post("/api/drop-tables", async (req, res) => {
 // Save Node
 app.post("/api/save-node", async (req, res) => {
     try {
+        await ensureConnection();
+
         console.log('Received save node request:', req.body);
         
         let { 
@@ -273,10 +277,13 @@ app.post("/api/save-node", async (req, res) => {
 // Delete Node
 app.delete("/api/delete-node/:id", async (req, res) => {
     const { id } = req.params;
-    if (!id) {
-        return res.status(400).json({ error: "Node ID is required" });
-    }
     try {
+        await ensureConnection();
+
+        if (!id) {
+            return res.status(400).json({ error: "Node ID is required" });
+        }
+
         console.log(`Deleting node with ID: ${id}`); // Log the node ID being deleted
 
         // Ensure the node exists before attempting to delete
@@ -303,16 +310,18 @@ app.delete("/api/delete-node/:id", async (req, res) => {
 
 // Load Nodes
 app.get("/api/load-nodes", async (req, res) => {
-    const query = `
-        SELECT nodes.*, 
-               GROUP_CONCAT(DISTINCT connections.target_id) AS connections, 
-               GROUP_CONCAT(DISTINCT node_graphs.graph_id) AS graphs
-        FROM nodes
-        LEFT JOIN connections ON nodes.id = connections.source_id
-        LEFT JOIN node_graphs ON nodes.id = node_graphs.node_id
-        GROUP BY nodes.id
-    `;
     try {
+        await ensureConnection();
+
+        const query = `
+            SELECT nodes.*, 
+                   GROUP_CONCAT(DISTINCT connections.target_id) AS connections, 
+                   GROUP_CONCAT(DISTINCT node_graphs.graph_id) AS graphs
+            FROM nodes
+            LEFT JOIN connections ON nodes.id = connections.source_id
+            LEFT JOIN node_graphs ON nodes.id = node_graphs.node_id
+            GROUP BY nodes.id
+        `;
         const results = await queryAsync(query);
         const formattedResults = results.map(row => ({
             id: row.id,
@@ -339,17 +348,19 @@ app.get("/api/load-nodes", async (req, res) => {
 // Fetch Node by ID
 app.get("/api/node/:id", async (req, res) => {
     const { id } = req.params;
-    const query = `
-        SELECT nodes.*, 
-               GROUP_CONCAT(DISTINCT connections.target_id) AS connections, 
-               GROUP_CONCAT(DISTINCT node_graphs.graph_id) AS graphs
-        FROM nodes
-        LEFT JOIN connections ON nodes.id = connections.source_id
-        LEFT JOIN node_graphs ON nodes.id = node_graphs.node_id
-        WHERE nodes.id = ?
-        GROUP BY nodes.id
-    `;
     try {
+        await ensureConnection();
+
+        const query = `
+            SELECT nodes.*, 
+                   GROUP_CONCAT(DISTINCT connections.target_id) AS connections, 
+                   GROUP_CONCAT(DISTINCT node_graphs.graph_id) AS graphs
+            FROM nodes
+            LEFT JOIN connections ON nodes.id = connections.source_id
+            LEFT JOIN node_graphs ON nodes.id = node_graphs.node_id
+            WHERE nodes.id = ?
+            GROUP BY nodes.id
+        `;
         const results = await queryAsync(query, [id]);
         if (results.length === 0) {
             return res.status(404).json({ error: "Node not found" });
