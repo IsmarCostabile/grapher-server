@@ -124,7 +124,8 @@ app.post("/api/init-db", async (req, res) => {
                 parent_id INT,
                 position VARCHAR(255),
                 superNodeId INT,
-                FOREIGN KEY (parent_id) REFERENCES nodes(id)
+                FOREIGN KEY (parent_id) REFERENCES nodes(id),
+                FOREIGN KEY (superNodeId) REFERENCES nodes(id) // Add this line
             );
         `);
         await queryAsync(`
