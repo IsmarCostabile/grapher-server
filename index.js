@@ -123,7 +123,7 @@ app.post("/api/init-db", async (req, res) => {
                 type VARCHAR(50) NOT NULL,
                 parent_id INT,
                 position VARCHAR(255),
-                superNodeId INT, // Add this line
+                superNodeId INT,
                 FOREIGN KEY (parent_id) REFERENCES nodes(id)
             );
         `);
