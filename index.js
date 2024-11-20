@@ -123,6 +123,7 @@ app.post("/api/init-db", async (req, res) => {
                 type VARCHAR(50) NOT NULL,
                 parent_id INT,
                 position VARCHAR(255),
+                superNodeId INT, // Add this line
                 FOREIGN KEY (parent_id) REFERENCES nodes(id)
             );
         `);
@@ -192,7 +193,8 @@ app.post("/api/save-node", async (req, res) => {
             parent_id, 
             position, 
             connections, 
-            graph_id 
+            graph_id,
+            superNodeId // Add this line
         } = req.body;
 
         if (!title) {
@@ -209,8 +211,8 @@ app.post("/api/save-node", async (req, res) => {
 
         // First ensure the node exists or create it
         const query = `
-            INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO nodes (id, title, description, images, audioFiles, documents, videoLinks, coordinates, type, parent_id, position, superNodeId)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
             title = VALUES(title),
             description = VALUES(description),
@@ -221,7 +223,8 @@ app.post("/api/save-node", async (req, res) => {
             coordinates = VALUES(coordinates),
             type = VALUES(type),
             parent_id = VALUES(parent_id),
-            position = VALUES(position)
+            position = VALUES(position),
+            superNodeId = VALUES(superNodeId) // Add this line
         `;
 
         const values = [
@@ -235,7 +238,8 @@ app.post("/api/save-node", async (req, res) => {
             coordinates ? JSON.stringify(coordinates) : null, 
             type || 'normal', 
             parent_id || null, 
-            position || JSON.stringify({"dx":0,"dy":0})
+            position || JSON.stringify({"dx":0,"dy":0}),
+            superNodeId || null // Add this line
         ];
 
         const result = await queryAsync(query, values);
@@ -305,7 +309,8 @@ app.get("/api/load-nodes", async (req, res) => {
             parent_id: row.parent_id,
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
-            graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : []
+            graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
+            superNodeId: row.superNodeId // Add this line
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -376,7 +381,8 @@ app.get("/api/load-nodes", async (req, res) => {
             parent_id: row.parent_id,
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
-            graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : []
+            graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
+            superNodeId: row.superNodeId // Add this line
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -419,7 +425,8 @@ app.get("/api/node/:id", async (req, res) => {
             parent_id: node.parent_id,
             position: node.position ? JSON.parse(node.position) : {"dx":0,"dy":0},
             connections: node.connections ? node.connections.split(',').filter(Boolean) : [],
-            graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : []
+            graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : [],
+            superNodeId: node.superNodeId // Add this line
         });
     } catch (err) {
         console.error("Failed to fetch node:", err.message);
