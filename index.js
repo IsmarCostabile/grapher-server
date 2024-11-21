@@ -2,7 +2,7 @@ const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const { v4: uuidv4 } = require('uuid'); // Add this line
+const { v4: uuidv4 } = require('uuid');
 require("dotenv").config();
 
 const app = express();
@@ -33,7 +33,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
 
 app.use(bodyParser.json());
 
@@ -124,7 +123,7 @@ app.post("/api/init-db", async (req, res) => {
                 type VARCHAR(50) NOT NULL,
                 parent_id INT,
                 position VARCHAR(255),
-                superNodeId INT, // Add this line
+                superNodeId INT,
                 FOREIGN KEY (parent_id) REFERENCES nodes(id)
             );
         `);
