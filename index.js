@@ -194,7 +194,7 @@ app.post("/api/save-node", async (req, res) => {
             position, 
             connections, 
             graph_id,
-            superNodeId // Add this line
+            superNodeId
         } = req.body;
 
         if (!title) {
@@ -224,7 +224,7 @@ app.post("/api/save-node", async (req, res) => {
             type = VALUES(type),
             parent_id = VALUES(parent_id),
             position = VALUES(position),
-            superNodeId = VALUES(superNodeId) // Add this line
+            superNodeId = VALUES(superNodeId)
         `;
 
         const values = [
@@ -239,7 +239,7 @@ app.post("/api/save-node", async (req, res) => {
             type || 'normal', 
             parent_id || null, 
             position || JSON.stringify({"dx":0,"dy":0}),
-            superNodeId || null // Add this line
+            superNodeId || null
         ];
 
         const result = await queryAsync(query, values);
@@ -310,7 +310,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId // Add this line
+            superNodeId: row.superNodeId
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -382,7 +382,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId // Add this line
+            superNodeId: row.superNodeId
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -426,7 +426,7 @@ app.get("/api/node/:id", async (req, res) => {
             position: node.position ? JSON.parse(node.position) : {"dx":0,"dy":0},
             connections: node.connections ? node.connections.split(',').filter(Boolean) : [],
             graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : [],
-            superNodeId: node.superNodeId // Add this line
+            superNodeId: node.superNodeId
         });
     } catch (err) {
         console.error("Failed to fetch node:", err.message);
