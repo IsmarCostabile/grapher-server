@@ -2,7 +2,7 @@ const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid'); // Add this line
 require("dotenv").config();
 
 const app = express();
@@ -33,6 +33,7 @@ app.use((req, res, next) => {
     }
     next();
 });
+
 
 app.use(bodyParser.json());
 
@@ -123,9 +124,8 @@ app.post("/api/init-db", async (req, res) => {
                 type VARCHAR(50) NOT NULL,
                 parent_id INT,
                 position VARCHAR(255),
-                superNodeId INT,
-                FOREIGN KEY (parent_id) REFERENCES nodes(id),
-                FOREIGN KEY (superNodeId) REFERENCES nodes(id)
+                superNodeId INT, // Add this line
+                FOREIGN KEY (parent_id) REFERENCES nodes(id)
             );
         `);
         await queryAsync(`
@@ -195,7 +195,7 @@ app.post("/api/save-node", async (req, res) => {
             position, 
             connections, 
             graph_id,
-            superNodeId 
+            superNodeId // Add this line
         } = req.body;
 
         if (!title) {
@@ -225,7 +225,7 @@ app.post("/api/save-node", async (req, res) => {
             type = VALUES(type),
             parent_id = VALUES(parent_id),
             position = VALUES(position),
-            superNodeId = VALUES(superNodeId)
+            superNodeId = VALUES(superNodeId) // Add this line
         `;
 
         const values = [
@@ -311,7 +311,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId 
+            superNodeId: row.superNodeId // Add this line
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -383,7 +383,7 @@ app.get("/api/load-nodes", async (req, res) => {
             position: row.position ? JSON.parse(row.position) : {"dx":0,"dy":0},
             connections: row.connections ? row.connections.split(',').filter(Boolean) : [],
             graphs: row.graphs ? row.graphs.split(',').filter(Boolean) : [],
-            superNodeId: row.superNodeId 
+            superNodeId: row.superNodeId // Add this line
         }));
         res.json(formattedResults);
     } catch (err) {
@@ -427,7 +427,7 @@ app.get("/api/node/:id", async (req, res) => {
             position: node.position ? JSON.parse(node.position) : {"dx":0,"dy":0},
             connections: node.connections ? node.connections.split(',').filter(Boolean) : [],
             graphs: node.graphs ? node.graphs.split(',').filter(Boolean) : [],
-            superNodeId: node.superNodeId
+            superNodeId: node.superNodeId // Add this line
         });
     } catch (err) {
         console.error("Failed to fetch node:", err.message);
